@@ -122,10 +122,14 @@ Note on Certificate Usage 0 and 1 (therefor not described above):
 0: fingerprint with regard to the full certificate  
 1: fingerprint with regard to the public key  
 
-**Matching-Type**: information about the hashing mechanism used for fingeeprint regarding this TLSA record.  
-0: no hasing, full information  
-1: SHA2-256 hash  
-2: SHA2-512 hash  
+**Matching Type**: information about the hashing algorithm used in the TLSA records Certificate Association Data Field.
+* SHA2-256(1): SHA2-256 hash (required)
+* SHA2-512(2): SHA2-512 hash
+
+> Servers SHOULD NOT exclusively publish SHA2-512(2) digests. Use [Digest Algorithm Agility](https://datatracker.ietf.org/doc/html/rfc7672#section-5) to implement both algorithms.
+
+Note on Matching Type 0 (therefor not described above):
+> In summary, the use of a TLSA matching type of Full(0) is NOT RECOMMENDED, and a digest-based matching type, such as SHA2-256(1), SHOULD be used instead. [RFC7671](https://datatracker.ietf.org/doc/html/rfc7671#section-10.1.2)
 
 # Advantages of DANE explained by illustrations
 ## Mail delivery: TLS without DANE
