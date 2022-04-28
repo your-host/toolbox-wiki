@@ -3,6 +3,8 @@
 # DANE for SMTP how-to
 This how-to is created by the Dutch Internet Standards Platform (the organization behind [Internet.nl](https://internet.nl)) in cooperation with industry experts (hosters and vendors) and is meant to provide practical information and guidance on implementing DANE for SMTP.
 
+👉 Great, now just [show me how](#dane-tlsa-record-example)
+
 # Executive Summary
 * DANE is a best-practice technology for securing the transfer of email (SMTP) between organizations across the public Internet.
 * Successful DANE deployments require additional operational discipline.
@@ -214,7 +216,7 @@ Two ways of handling certificate rollover are known to work well, in combination
 # Tips, tricks and notices for implementation
 This section describes several pionts for attention when implementing DANE for SMTP. 
 
-* DANE is meant to be used for the MX domain. So if you are using another domain's mail servers, make sure to ask the administrator of that domain (your mail provider) to support DANE by setting up a TLSA record.
+* DANE is currently only used for transfer between MTAs (thus the MX domain). So if you are using another domain's mail servers, make sure to ask the administrator of that domain (your mail provider) to support DANE by setting up a TLSA record.
 * When implementing DANE we advise to first publish DANE records on your MX domains, and then enable DANE verification on your sending mail servers.
 * DANE is backwards compatible. So if your mail server supports DANE and a connecting mail server does not support it yet, usually STARTTLS or plain text is used.
 * DANE relies on the security that is provided by DNSSEC. Make your primary domain and MX domain support DNSSEC before implementing DANE. It is important that DNSSEC is implemented properly. A lot of DANE breakage stems from receiving/recipient domains with broken DNSSEC implementations.
@@ -222,10 +224,7 @@ This section describes several pionts for attention when implementing DANE for S
   * It is possible to use self-signed certificates. 
   * [Section 3.2 of RFC 7672](https://tools.ietf.org/html/rfc7672#section-3.2) states that SMTP clients **must not** perform certificate name checks when using an end-entity certificate (usage type 3). However, it also states that SMTP clients **must** perform certificate name checks when using an intermediate or root certificate (usage type 2). The latter is necessary to prevent attackers from abusing a random intermediate or root certificate to falsely validate their evil mail servers.  
   * [Section 3.1 of RFC 7672](https://tools.ietf.org/html/rfc7672#section-3.1) states that the expiration date of the end-entity certificate MUST be ignored.
-* It is highly recommended to use a certificates public key for generating a TLSA signature (selector type "1") instead of the full certificate (selector type "0"), because this enables the reuse of key materials. Although it is wise to refresh your key material once in a while, note that the use of Forward Secrecy decreases the need to use a new key-pair on every occasion. 
   * See also this [example of Let's Encrypt](https://mail.sys4.de/pipermail/dane-users/2019-December/000545.html). In this case the issuer certificate was changed, but the public key was not. As a result a "2 1 1" roll-over record would still validate, but a "2 0 1" roll-over record would not and requires an update. 
-* An issuer certificate (usage type "2") validates only when the full certificate chain is offered by the receiving mail server. 
-* Mail servers by default don't validate certificates and therefore don't have their own certificate store. That's why DANE for SMTP only supports usage type "2" (DANE-TA) and usage type "3" (DANE-EE). Usage type "0" (PKIX-TA) and usage type "1" (PKIX-EE) are not supported. 
 * Make sure the TTL (time-to-live) of your TLSA records is not too high. This makes it possible to apply changes relatively fast in case of problems. A TTL between 30 minutes (1800) and 1 hour (3600) is recommended.
 * The refresh value of your full DNS zone should be in accordance with the TTL setting of your TLSA record, to make sure all name servers give the same information when (after expiration of the TLSA TTL) being queried.
 * In case of roll-over scheme "current + issuer", the use of the root certificate is preferred because in some contexts ([PKIoverheid](https://en.wikipedia.org/wiki/PKIoverheid)) this makes it easier to switch supplier / certificate without impacting DANE. (Remember [DigiNotar](https://en.wikipedia.org/wiki/DigiNotar)). 
