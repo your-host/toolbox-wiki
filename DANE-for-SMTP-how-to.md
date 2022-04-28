@@ -111,44 +111,44 @@ Note that MTA-STA and DANE can co-exists next to each other. They intentionally 
 # DANE TLSA record example
 ![](images/DANE-example-TLSA-record.png)
 
-In summary: You want to the following pattern:
+In summary, you want to use the following pattern: DANE-EE(3), SPKI(1), SHA-256(1)
 ```
 _25._tcp.mail.example.nl. 300 IN TLSA 3 1 1 <your SHA2-256 hash>
 ```
-Whenever SHA2-256 becomes "weak", you want to use two records (in about 50-100 years):
-```
-_25._tcp.mail.example.nl. 300 IN TLSA 3 1 1 <your SHA2-256 hash>
-_25._tcp.mail.example.nl. 300 IN TLSA 3 1 2 <your SHA2-512 hash>
-```
-If you are a SaaS-provider (issuing certificates for clients CNAME-ing to your domain)
-you can consider using DANE-TA. Then you would use your own intermediate certificate for the TLSA record (which is the closest to the issued end-certificate for the client). And you need to make sure that you include the TA certificate as part of the certificate chain presented in the TLS handshake server certificate message even when it is a self-signed root certificate. Also, in this case you should use the "Full certificate(0)" selector in stead of the "SPKI(1)". Such TLSA records are associated with the whole trust anchor certificate, not just with the trust anchor public key. Otherwise this may, for example, allow a subsidiary CA to issue a chain that violates the trust anchor's path length or name constraints. [RFC7672](https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.2). This means using: "...TLSA 2 0 1 ..." and optionally add "...TLSA 2 0 2 ..." (if required).
-
-In ALL other cases (including mass virtual hosting), you should use the pattern of "...TLSA 3 1 1 ..." and skip the SHA2-512 variant for now. Implement the SHA2-512 when it becomes a requirement. Also: you probably want your certificate in 256-bit as well to assist clients that support a smaller number of algorithms.
 
 ## Fields overview:
 
-**Certificate Usage**: The type of certificate that is used for this TLSA record.  
-* DANE-TA(2): intermediate / root certificate  
-* DANE-EE(3): end-entity certificate (also called 'host certificate' or 'server certificate')
+**Certificate Usage**:
+* ~~```PKIX-TA(0)```~~
+* ~~```PKIX-EE(1)```~~
+* ```DANE-TA(2)``` Intermediate Certificate (when you are a [SaaS-provider](#use-dane-ta-if-you-are-a-saas-provider))
+* ```DANE-EE(3)``` End Entity Certificate (also called 'host certificate' or 'server certificate')
 
-> MTAs SHOULD NOT include TLSA RRs with certificate usage PKIX-TA(0) or PKIX-EE(1). Read more on: [RFC7672](https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.3)
+> Do [NOT](https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.3) use PKIX-TA(0) and PKIX-EE(1).
 
-**Selector**: specifies which part of the TLS certificate presented by the server will be matched against the associated data.
-* 0: Full certificate
-* 1: SubjectPublicKeyInfo (SPKI)
+**Selector**:
+* ```Cert(0)``` Full Certificate
+* ```SPKI(1)``` Subject Public Key Info
 
 > TLSA Publishers employing DANE-TA(2) records SHOULD publish records with
-  a selector of "Full Certificate(0)". Otherwise SPKI(1) is recommended because it
+  a selector of "Cert(0)". Otherwise SPKI(1) is recommended because it
   is compatible with raw public keys [RFC7250] and the resulting TLSA
   record needs no change across certificate renewals with the same key.
 
-**Matching Type**: information about the hashing algorithm used in the TLSA records Certificate Association Data Field.
-* 1: SHA2-256 hash (required)
-* 2: SHA2-512 hash
+**Matching Type**:
+* ~~```Full(0)```~~
+* ```SHA-256(1)``` SHA2-256 hash (always use this)
+* ```SHA-512(2)``` SHA2-512 hash (only add if required, then use both with [Digest Algorithm Agility](https://datatracker.ietf.org/doc/html/rfc7672#section-5))
 
-> Servers SHOULD NOT exclusively publish SHA2-512(2) digests. Use [Digest Algorithm Agility](https://datatracker.ietf.org/doc/html/rfc7672#section-5) to implement both algorithms.
+> Do [NOT](https://datatracker.ietf.org/doc/html/rfc7671#section-10.1.2) use matching type of Full(0).
 
-> In summary, the use of a TLSA matching type of Full(0) is NOT RECOMMENDED, and a digest-based matching type, such as SHA2-256(1), SHOULD be used instead. [RFC7671](https://datatracker.ietf.org/doc/html/rfc7671#section-10.1.2)
+## Use DANE-TA if you are a SaaS-provider.
+
+Hosting providers and mass virtual hosting ***should not*** use DANE-TA because their clients own their own domain and issue their own certificates.
+
+SaaS-providers issue the certificate for a client (sub)domain. In that case the client would CNAME to a custom or global (sub)domain of the SaaS-provider. By using DANE-TA the provider does not need thousands of TLSA-records on their primary domain. If you are a SaaS-provider you want to use ***your own*** intermediate certificate for the TLSA record (the one closest to the issued end-certificate for your clients domain).
+
+You will need to make sure that you include the TA certificate as part of the certificate chain presented in the TLS handshake server certificate message. Even when it is a self-signed root certificate. Also, in this case you should use the "Full certificate(0)" selector in stead of the "SPKI(1)". Such TLSA records are associated with the whole trust anchor certificate, not just with the trust anchor public key. Otherwise this may, for example, allow a subsidiary CA to issue a chain that violates the trust anchor's path length or name constraints (read more on [RFC7672](https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.2)). This means using: "...TLSA 2 0 1 ..." and optionally add "...TLSA 2 0 2 ..." (if required).
 
 # Advantages of DANE explained by illustrations
 ## Mail delivery: TLS without DANE
