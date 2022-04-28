@@ -111,9 +111,12 @@ Note that MTA-STA and DANE can co-exists next to each other. They intentionally 
 # DANE TLSA record example
 ![](images/DANE-example-TLSA-record.png)
 
-**Usage**: says something about the type of certificate that is used for this TLSA record.  
-2: intermediate / root certificate  
-3: end-entity certificate (also called 'host certificate' or 'server certificate')
+**Certificate Usage**: The type of certificate that is used for this TLSA record.  
+* DANE-TA(2): intermediate / root certificate  
+* DANE-EE(3): end-entity certificate (also called 'host certificate' or 'server certificate')
+
+Note on Certificate Usage 0 and 1 (therefor not described above):
+> MTAs SHOULD NOT include TLSA RRs with certificate usage PKIX-TA(0) or PKIX-EE(1). Read more on: [RFC7672](https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.3)
 
 **Selector**: this is about the scope of the fingerprint regarding this TLSA record.  
 0: fingerprint with regard to the full certificate  
