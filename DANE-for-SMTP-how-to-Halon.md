@@ -1,3 +1,13 @@
+- [Implementing DANE for SMTP on Halon (inbound & outbound e-mail traffic)](#implementing-dane-for-smtp-on-halon--inbound---outbound-e-mail-traffic-)
+  * [Generic configuration](#generic-configuration)
+    + [Install or generate key pair](#install-or-generate-key-pair-1)
+    + [DNSSEC](#dnssec)
+  * [Inbound](#inbound)
+  * [Outbound](#outbound)
+    + [Transport Label](#transport-label)
+    + [Scripting](#scripting)
+    + [Logging](#logging)
+
 # Implementing DANE for SMTP on Halon (inbound & outbound e-mail traffic)
 Several Dutch hosting providers use Halon (a scriptable SMTP server who's virtual appliances are based on FreeBSD) as the internet facing e-mail server. The actual mail boxes reside on Direct Admin (which uses Exim) within the internal network. In this specific setup you could say that all security features are applied at the internet facing mail server which is Halon. 
 
