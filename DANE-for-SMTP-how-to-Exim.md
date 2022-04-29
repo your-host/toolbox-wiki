@@ -1,3 +1,12 @@
+- [Implementing DANE for SMTP on Exim (inbound & outbound e-mail traffic)](#implementing-dane-for-smtp-on-exim--inbound---outbound-e-mail-traffic-)
+  * [Configuration for inbound e-mail traffic](#configuration-for-inbound-e-mail-traffic)
+    + [Install or generate key pair](#install-or-generate-key-pair)
+    + [Configure TLS](#configure-tls)
+  * [Configuration for outbound e-mail traffic](#configuration-for-outbound-e-mail-traffic)
+    + [DNSSEC validating resolvers](#dnssec-validating-resolvers)
+    + [Configure DNSSEC validation in Exim](#configure-dnssec-validation-in-exim)
+    + [Configure DANE](#configure-dane)
+
 # Implementing DANE for SMTP on Exim (inbound & outbound e-mail traffic)
 **Specifics for this setup**
 * Ubuntu 18.10 ‘Cosmic Cuttlefish’ 
