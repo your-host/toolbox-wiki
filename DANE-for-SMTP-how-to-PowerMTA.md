@@ -1,3 +1,8 @@
+- [Implementing DANE for SMTP on Port25 PowerMTA (outbound e-mail traffic)](#implementing-dane-for-smtp-on-port25-powermta--outbound-e-mail-traffic-)
+  * [Generic configuration](#generic-configuration-1)
+    + [Configure the use of DANE on the domain level](#configure-the-use-of-dane-on-the-domain-level)
+    + [Logging](#logging-1)
+
 # Implementing DANE for SMTP on Port25 PowerMTA (outbound e-mail traffic)
 Various Email Service Providers (ESP) are using Port25 PowerMTA as their preferred outbound MTA.
 
