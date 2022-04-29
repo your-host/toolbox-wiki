@@ -1,3 +1,6 @@
+- [Implementing DANE for SMTP on Postfix (inbound & outbound e-mail traffic)](#implementing-dane-for-smtp-on-postfix--inbound---outbound-e-mail-traffic-)
+  * [Configuring Postfix](#configuring-postfix)
+
 # Implementing DANE for SMTP on Postfix (inbound & outbound e-mail traffic)
 
 **Specifics for this setup**
