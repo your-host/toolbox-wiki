@@ -35,29 +35,11 @@ This how-to is created by the Dutch Internet Standards Platform (the organizatio
   * [Publishing DANE records](#publishing-dane-records)
   * [Generating DANE roll-over records](#generating-dane-roll-over-records)
   * [Publishing DANE roll-over records](#publishing-dane-roll-over-records)
-- [Implementing DANE for SMTP on Postfix (inbound & outbound e-mail traffic)](#implementing-dane-for-smtp-on-postfix--inbound---outbound-e-mail-traffic-)
-  * [Configuring Postfix](#configuring-postfix)
-- [Implementing DANE for SMTP on Exim (inbound & outbound e-mail traffic)](#implementing-dane-for-smtp-on-exim--inbound---outbound-e-mail-traffic-)
-  * [Configuration for inbound e-mail traffic](#configuration-for-inbound-e-mail-traffic)
-    + [Install or generate key pair](#install-or-generate-key-pair)
-    + [Configure TLS](#configure-tls)
-  * [Configuration for outbound e-mail traffic](#configuration-for-outbound-e-mail-traffic)
-    + [DNSSEC validating resolvers](#dnssec-validating-resolvers)
-    + [Configure DNSSEC validation in Exim](#configure-dnssec-validation-in-exim)
-    + [Configure DANE](#configure-dane)
-- [Implementing DANE for SMTP on Halon (inbound & outbound e-mail traffic)](#implementing-dane-for-smtp-on-halon--inbound---outbound-e-mail-traffic-)
-  * [Generic configuration](#generic-configuration)
-    + [Install or generate key pair](#install-or-generate-key-pair-1)
-    + [DNSSEC](#dnssec)
-  * [Inbound](#inbound)
-  * [Outbound](#outbound)
-    + [Transport Label](#transport-label)
-    + [Scripting](#scripting)
-    + [Logging](#logging)
-- [Implementing DANE for SMTP on Port25 PowerMTA (outbound e-mail traffic)](#implementing-dane-for-smtp-on-port25-powermta--outbound-e-mail-traffic-)
-  * [Generic configuration](#generic-configuration-1)
-    + [Configure the use of DANE on the domain level](#configure-the-use-of-dane-on-the-domain-level)
-    + [Logging](#logging-1)
+- [Implementation guides:](#implementations)
+  * [Postfix](DANE-for-SMTP-how-to-Postfix.md)
+  * [Exim](DANE-for-SMTP-how-to-Exim.md)
+  * [Halon](DANE-for-SMTP-how-to-Halon.md)
+  * [PowerMTA on port 25 (outbound only)](DANE-for-SMTP-how-to-PowerMTA.md)
 - [Special thanks](#special-thanks)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
@@ -281,6 +263,8 @@ With this information we can create the DNS record for DANE:
 6. now you can remove the old record
 
 # Implementations
+
+These specific write-ups show you how to use DANE SMTP for incoming and/or outgoing email traffic:
 
 * [Postfix](DANE-for-SMTP-how-to-Postfix.md)
 * [Exim](DANE-for-SMTP-how-to-Exim.md)
