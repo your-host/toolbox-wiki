@@ -3,7 +3,7 @@
 # DANE for SMTP how-to
 This how-to is created by the Dutch Internet Standards Platform (the organization behind [Internet.nl](https://internet.nl)) in cooperation with industry experts (hosters and vendors) and is meant to provide practical information and guidance on implementing DANE for SMTP.
 
-👉 Great, now just [show me how](#dane-tlsa-record-example)
+👉 Great, now just [show me how](#generate-dane-tlsa-record-with-example)
 
 # Executive Summary
 * DANE is a best-practice technology for securing the transfer of email (SMTP) between organizations across the public Internet.
@@ -20,7 +20,7 @@ This how-to is created by the Dutch Internet Standards Platform (the organizatio
   * [Risks of SMTP with opportunistic TLS](#risks-of-smtp-with-opportunistic-tls)
   * [DANE addresses these risks](#dane-addresses-these-risks)
   * [How about MTA-STS?](#how-about-mta-sts)
-- [DANE TLSA record example](#dane-tlsa-record-example)
+- [Generate a DANE TLSA record for inbound e-mail traffic (publishing DANE DNS records)](#generate-dane-tlsa-record-with-example)
 - [Advantages of DANE explained by illustrations](#advantages-of-dane-explained-by-illustrations)
   * [Mail delivery: TLS without DANE](#mail-delivery--tls-without-dane)
   * [Mail delivery: TLS with MITM stripping TLS](#mail-delivery--tls-with-mitm-stripping-tls)
@@ -30,11 +30,6 @@ This how-to is created by the Dutch Internet Standards Platform (the organizatio
 - [Reliable certificate rollover](#reliable-certificate-rollover)
   * [Points of attention when rolling over using "current + next"](#points-of-attention-when-rolling-over-using--current---next-)
 - [Tips, tricks and notices for implementation](#tips--tricks-and-notices-for-implementation)
-- [Inbound e-mail traffic (publishing DANE DNS records)](#inbound-e-mail-traffic--publishing-dane-dns-records-)
-  * [Generating DANE records](#generating-dane-records)
-  * [Publishing DANE records](#publishing-dane-records)
-  * [Generating DANE roll-over records](#generating-dane-roll-over-records)
-  * [Publishing DANE roll-over records](#publishing-dane-roll-over-records)
 - [Implementation guides:](#implementations)
   * [Postfix](DANE-for-SMTP-how-to-Postfix.md)
   * [Exim](DANE-for-SMTP-how-to-Exim.md)
@@ -92,13 +87,25 @@ In view of the foregoing and considering the facts that the Dutch NCSC [advises]
 
 Note that MTA-STA and DANE can co-exists next to each other. They intentionally do not interfere.
 
-# DANE TLSA record example
+# Generate DANE TLSA record (with example)
+This part of the how-to describes the steps that should be taken with regard to your inbound e-mail traffic, which primairily involves publishing DANE DNS records. This enables other parties to use DANE for validating the certificates offered by your e-mail servers.
 ![](images/DANE-example-TLSA-record.png)
 
 In summary, you want to use the following pattern: DANE-EE(3), SPKI(1), SHA-256(1)
 ```
 _25._tcp.mail.example.nl. 300 IN TLSA 3 1 1 <your SHA2-256 hash>
 ```
+Replace the value of ```<your SHA2-256 hash>``` with the value of your own certificate.
+<br> Replace ```mail.example.nl``` with your (sub)domain. Multiple mailservers on the same domain need a TLSA record for each of the subdomains.
+
+You can generate the DANE SHA2-256 hash of the public key with the following command:
+```bash
+echo $(openssl x509 -in "/path/to/cert.pem" -noout -pubkey \
+| openssl pkey -pubin -outform DER \
+| openssl sha256 -binary \
+| hexdump -ve '/1 "%02x"')
+```
+In the command above, replace ```/path/to/cert.pem``` with the location of your domain certificate.
 
 ## Fields overview:
 
@@ -133,6 +140,14 @@ Hosting providers and mass virtual hosting ***should not*** use DANE-TA because 
 SaaS-providers issue the certificate for a client (sub)domain. In that case the client would CNAME to a custom or global (sub)domain of the SaaS-provider. By using DANE-TA the provider does not need thousands of TLSA-records on their primary domain. If you are a SaaS-provider you want to use ***your own*** intermediate certificate for the TLSA record (the one closest to the issued end-certificate for your clients domain).
 
 You will need to make sure that you include the TA certificate as part of the certificate chain presented in the TLS handshake server certificate message. Even when it is a self-signed root certificate. Also, in this case you should use the "Full certificate(0)" selector in stead of the "SPKI(1)". Such TLSA records are associated with the whole trust anchor certificate, not just with the trust anchor public key. Otherwise this may, for example, allow a subsidiary CA to issue a chain that violates the trust anchor's path length or name constraints (read more on [RFC7672](https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.2)). This means using: "...TLSA 2 0 1 ..." and optionally add "...TLSA 2 0 2 ..." (if required).
+
+You can generate the DANE SHA2-256 hash of the full certificate with the following command:
+```bash
+echo $(openssl x509 -in "/path/to/ca.pem" -outform DER \
+| openssl sha256 -binary \
+| hexdump -ve '/1 "%02x"')
+```
+In the command above, replace ```/path/to/ca.pem``` with the location of your intermediate ~~(or root)~~ certificate.
 
 # Advantages of DANE explained by illustrations
 ## Mail delivery: TLS without DANE
@@ -217,40 +232,6 @@ This section describes several pionts for attention when implementing DANE for S
 * Check if DANE TLSA records (_25._tcp.mail.example.nl) are properly DNSSEC signed. A regularly occuring mistake is the presence of "proof of non-existence" (NSEC3) for the ancestor domain (_tcp.mail.example.nl). If this happens then resolvers that use qname minimization (like the resolver used by [Internet.nl](https://internet.nl)) think that _25._tcp.mail.example.nl does not exists since _tcp.mail.example.nl does not exists. Therefore the resolver can't get the TLSA record which makes DANE fail. 
   * Check your DNSSEC implementation on [DNSViz](https://dnsviz.net/). Enter "_25._tcp.mail.example.nl".
   * You can also manually check for this error. `dig _25._tcp.mail.example.nl tlsa +dnssec` results in a NOERROR response, while `dig _tcp.mail.example.nl tlsa +dnssec` results in a NXDOMAIN response. 
-
-# Inbound e-mail traffic (publishing DANE DNS records)
-This part of the how-to describes the steps that should be taken with regard to your inbound e-mail traffic, which primairily involves publishing DANE DNS records. This enables other parties to use DANE for validating the certificates offered by your e-mail servers. 
-
-## Generating DANE records
-**Primary mail server (mail1.example.nl)**
-
-Generate the DANE SHA-256 hash with the following command:
-
-`openssl x509 -in /path/to/primary-mailserver.crt -noout -pubkey | openssl pkey -pubin -outform DER | openssl sha256`
-
-This command results in the following output:
- 
-> (stdin)= 29c8601cb562d00aa7190003b5c17e61a93dcbed3f61fd2f86bd35fbb461d084
-
-**Secondary mail server (mail2.example.nl)**
-
-For the secondary mail server we generate the DANE SHA-256 hash using the command:
-
-`openssl x509 -in /path/to/secondary-mailserver.crt -noout -pubkey | openssl pkey -pubin -outform DER | openssl sha256`
-
-This command results in the following output: 
-> (stdin)= 22c635348256dc53a2ba6efe56abfbe2f0ae70be2238a53472fef5064d9cf437
-
-## Publishing DANE records
-Now that we have the SHA-256 hashes, we can construct the DNS records. We make the following configuration choices:
-* Usage field is "**3**"; we generated a DANE hash of the leaf certificate itself (DANE-EE: Domain Issued Certificate).
-* Selector field is "**1**"; we used the certificates' public key to generate DANE hash/signature.
-* Matching-type field is "**1**"; we use SHA-256.
-
-With this information we can create the DNS record for DANE:
-
-> _25._tcp.mail.example.nl. IN TLSA 3 1 1 29c8601cb562d00aa7190003b5c17e61a93dcbed3f61fd2f86bd35fbb461d084  
-> _25._tcp.mail2.example.nl. IN TLSA 3 1 1 22c635348256dc53a2ba6efe56abfbe2f0ae70be2238a53472fef5064d9cf437
 
 ## DANE roll-over records
 1. issue the new certificate (do not install)
