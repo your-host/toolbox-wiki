@@ -109,29 +109,7 @@ In the command above, replace ```/path/to/cert.pem``` with the location of your 
 
 ## Fields overview:
 
-**Certificate Usage**:
-* ~~```PKIX-TA(0)```~~
-* ~~```PKIX-EE(1)```~~
-* ```DANE-TA(2)``` Intermediate Certificate (when you are a [SaaS-provider](#use-dane-ta-if-you-are-a-saas-provider))
-* ```DANE-EE(3)``` End Entity Certificate (also called 'host certificate' or 'server certificate')
-
-> Do [NOT](https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.3) use PKIX-TA(0) and PKIX-EE(1).
-
-**Selector**:
-* ```Cert(0)``` Full Certificate
-* ```SPKI(1)``` Subject Public Key Info
-
-> TLSA Publishers employing DANE-TA(2) records SHOULD publish records with
-  a selector of "Cert(0)". Otherwise SPKI(1) is recommended because it
-  is compatible with raw public keys [RFC7250] and the resulting TLSA
-  record needs no change across certificate renewals with the same key.
-
-**Matching Type**:
-* ~~```Full(0)```~~
-* ```SHA-256(1)``` SHA2-256 hash (always use this)
-* ```SHA-512(2)``` SHA2-512 hash (only add if required, then use both with [Digest Algorithm Agility](https://datatracker.ietf.org/doc/html/rfc7672#section-5))
-
-> Do [NOT](https://datatracker.ietf.org/doc/html/rfc7671#section-10.1.2) use matching type of Full(0).
+...moved
 
 ## Use DANE-TA if you are a SaaS-provider.
 
