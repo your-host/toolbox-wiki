@@ -3,8 +3,6 @@
 # DANE for SMTP how-to
 This how-to is created by the Dutch Internet Standards Platform (the organization behind [Internet.nl](https://internet.nl)) in cooperation with industry experts (hosters and vendors) and is meant to provide practical information and guidance on implementing DANE for SMTP.
 
-👉 Great, now just [show me how](#generate-dane-tlsa-record-with-example)
-
 # Executive Summary
 * DANE is a best-practice technology for securing the transfer of email (SMTP) between organizations across the public Internet.
 * Successful DANE deployments require additional operational discipline.
@@ -33,9 +31,6 @@ This how-to is created by the Dutch Internet Standards Platform (the organizatio
 - [Implementation guides:](#implementations)
   * [Postfix](DANE-for-SMTP-how-to-Postfix.md)
   * [Exim](DANE-for-SMTP-how-to-Exim.md)
-  * [Halon](DANE-for-SMTP-how-to-Halon.md)
-  * [PowerMTA on port 25 (outbound only)](DANE-for-SMTP-how-to-PowerMTA.md)
-- [Special thanks](#special-thanks)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -43,11 +38,6 @@ This how-to is created by the Dutch Internet Standards Platform (the organizatio
 DANE is short for "**D**NS-based **A**uthentication of **N**amed **E**ntities" and is described in [RFC 6698](https://tools.ietf.org/html/rfc6698) with "updates and operational guidance" in [RFC 7671](https://tools.ietf.org/html/rfc7671). DANE establishes a downgrade-resistant method to verify an SMTP servers identity **before** it starts to transport an email message over a STARTTLS encrypted layer. In order to achieve this it uses verification information retrieved from the recipients DNSSEC signed DNS zone. DANE does not rely on additional trusted parties outside the delegation chain in DNS. 
 
 DANE, as a method, has been designed to work with any TLS service. DANE for SMTP (which is described in [RFC 7672](https://tools.ietf.org/html/rfc7672)) implements the DANE method for SMTP. It is used increasingly and adds active attack (man-in-the-middle) resistance to SMTP transport encryption [RFC 7672 Section 1.3](https://tools.ietf.org/rfc7672#section-1.3). DANE for SMTP uses the presence of DNS TLSA ressource records to **securely signal TLS support** and to publish the means by which SMTP clients can successfully **authenticate legitimate SMTP servers**. The result is called "opportunistic DANE TLS", and resists downgrade and man-in-the-middle (MITM) attacks when the destination domain and its MX hosts are DNSSEC signed, and TLSA records are published for each MX host. While possible, DANE for HTTP is not presently supported by the major browsers and so has seen little deployment.
-
-# Why use DANE for SMTP?
-At this time it is not possible to require **mandatory** transport encryption (TLS) in public mail transport. A mail server might not support transporting messages using encryption. Today only plaintext or **opportunistic** transport encryption are applicable – opportunistic because it is up to the receiving server to decide if it wants to and is able to send messages using TLS (via STARTTLS).
-
-DANE offers several advantages by binding X.509 certificates to domains using DNSSEC. In an SMTP context this allows **a)** sending mail servers to securely signal TLS support by the receiving domain's mail server, and **b)** sending mail servers to verify the autenticity of the offered certificate by the receiving domain's mail server. This helps to address risks that occur when using oppurtunistic TLS connections between mail servers.  
 
 ## Risks of SMTP with opportunistic TLS
 The way SMTP was designed including the usage of opportunistic TLS (via STARTTLS) is not without risks:
@@ -88,44 +78,9 @@ In view of the foregoing and considering the facts that the Dutch NCSC [advises]
 Note that MTA-STA and DANE can co-exists next to each other. They intentionally do not interfere.
 
 # Generate DANE TLSA record (with example)
-This part of the how-to describes the steps that should be taken with regard to your inbound e-mail traffic, which primairily involves publishing DANE DNS records. This enables other parties to use DANE for validating the certificates offered by your e-mail servers.
+
 ![](images/DANE-example-TLSA-record.png)
 
-In summary, you want to use the following pattern: DANE-EE(3), SPKI(1), SHA-256(1)
-```
-_25._tcp.mail.example.nl. 300 IN TLSA 3 1 1 <your SHA2-256 hash>
-```
-Replace the value of ```<your SHA2-256 hash>``` with the value of your own certificate.
-<br> Replace ```mail.example.nl``` with your (sub)domain. Multiple mailservers on the same domain need a TLSA record for each of the subdomains.
-
-You can generate the DANE SHA2-256 hash of the public key with the following command:
-```bash
-echo $(openssl x509 -in "/path/to/cert.pem" -noout -pubkey \
-| openssl pkey -pubin -outform DER \
-| openssl sha256 -binary \
-| hexdump -ve '/1 "%02x"')
-```
-In the command above, replace ```/path/to/cert.pem``` with the location of your domain certificate.
-
-## Fields overview:
-
-...moved
-
-## Use DANE-TA if you are a SaaS-provider.
-
-Hosting providers and mass virtual hosting ***should not*** use DANE-TA because their clients own their own domain and issue their own certificates.
-
-SaaS-providers issue the certificate for a client (sub)domain. In that case the client would CNAME to a custom or global (sub)domain of the SaaS-provider. By using DANE-TA the provider does not need thousands of TLSA-records on their primary domain. If you are a SaaS-provider you want to use ***your own*** intermediate certificate for the TLSA record (the one closest to the issued end-certificate for your clients domain).
-
-You will need to make sure that you include the TA certificate as part of the certificate chain presented in the TLS handshake server certificate message. Even when it is a self-signed root certificate. Also, in this case you should use the "Full certificate(0)" selector in stead of the "SPKI(1)". Such TLSA records are associated with the whole trust anchor certificate, not just with the trust anchor public key. Otherwise this may, for example, allow a subsidiary CA to issue a chain that violates the trust anchor's path length or name constraints (read more on [RFC7672](https://datatracker.ietf.org/doc/html/rfc7672#section-3.1.2)). This means using: "...TLSA 2 0 1 ..." and optionally add "...TLSA 2 0 2 ..." (if required).
-
-You can generate the DANE SHA2-256 hash of the full certificate with the following command:
-```bash
-echo $(openssl x509 -in "/path/to/ca.pem" -outform DER \
-| openssl sha256 -binary \
-| hexdump -ve '/1 "%02x"')
-```
-In the command above, replace ```/path/to/ca.pem``` with the location of your intermediate ~~(or root)~~ certificate.
 
 # Advantages of DANE explained by illustrations
 ## Mail delivery: TLS without DANE
@@ -225,19 +180,4 @@ These specific write-ups show you how to use DANE SMTP for incoming and/or outgo
 
 * [Postfix](DANE-for-SMTP-how-to-Postfix.md)
 * [Exim](DANE-for-SMTP-how-to-Exim.md)
-* [Halon](DANE-for-SMTP-how-to-Halon.md)
-* [PowerMTA on port 25 (outbound only)](DANE-for-SMTP-how-to-PowerMTA.md)
 
-# Special thanks
-Our infinite gratitude goes out to the following people for their support in building this how-to for DANE.
-
-Alexander Brotman  
-Alwin de Bruin  
-Anders Berggren  
-Marc van de Geijn  
-Mark Scholten  
-Patrick Koetter  
-Simon Besteman  
-Tom van Leeuwen  
-Viktor Dukhovni  
-Wido Potters  
